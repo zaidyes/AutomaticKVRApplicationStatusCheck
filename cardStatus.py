@@ -97,26 +97,56 @@ def getCodeResults(content):
 
 	return results
 
+def emailResults(eFrom, pwd, eTo, results):
+	readyResults = []
+	for result in results:
+		if result.status == Status.READY:
+			readyResults.append(result)
+
+	if len(readyResults) < 1:
+		return False
+
+	try:
+		server = smtplib.SMTP('smtp.gmail.com', 587)
+		server.ehlo()
+		server.starttls()
+		login = server.login(eFrom,pwd)
+		if login :
+			print "Emailing to: " + eTo
+		else :
+			print "Could not login for user: " + username
+
+		for readyRes in readyResults:
+			server.sendmail(eFrom, eTo, "Code: " + readyRes.code + " | Status: " + str(readyRes.status) + " | Message: " + readyRes.message)
+
+		server.quit()
+		return True
+	except:
+		print "Could not connect to gmail...aborting"
+		return False
+
 def main(argv):
 	codeFile = ''
-	emailFrom = ''
+	username = ''
 	emailTo = ''
 
 	try:
-		opts,args = getopt.getopt(argv,"hc:f:t:",["codefile=","emailfrom=", "emailto="])
+		opts,args = getopt.getopt(argv,"hc:u:p:t:",["codefile=","username=", "password=", "emailto="])
 	except getopt.GetoptError:
-		print 'cardStatus.py -c <codefile> -f <emailfrom> -t <emailto>'
+		print 'cardStatus.py -c <codefile> -u <username> -p <password> -t <emailto>'
 	  	sys.exit(2)
 
 	for opt,arg in opts:
 	    if opt == '-h':
-	        print 'cardStatus.py -c <codefile> -f <emailfrom> -t <emailto>'
-	        print 'example: cardStatus.py -c codefile.txt -f myemail@myemail.com -t youremail@youremail.com'
+	        print 'cardStatus.py -c <codefile> -u <username> -p <password> -t <emailto>'
+	        print 'example: cardStatus.py -c codefile.txt -f myemail@myemail.com -p mypassword -t youremail@youremail.com'
 	        sys.exit()
 	    elif opt in ("-c", "--codefile"):
 	    	codeFile = arg
-	    elif opt in ("-f", "--emailfrom"):
-	    	emailFrom = arg
+	    elif opt in ("-u", "--username"):
+	    	username = arg
+	    elif opt in ("-p", "--password"):
+	    	password = arg
 	    elif opt in ("-t", "--emailto"):
 	    	emailTo = arg
 
@@ -137,6 +167,13 @@ def main(argv):
 
 	for result in results:
 		print "Code: " + result.code + " | Status: " + str(result.status) + " | Message: " + result.message
+
+	if username and password and emailTo:
+		if emailResults(username, password, emailTo, results):
+			print "Results emailed"
+	else:
+		print "Email not configured...exiting"
+
 
 if __name__ == "__main__":
    main(sys.argv[1:])
