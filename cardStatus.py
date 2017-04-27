@@ -4,6 +4,8 @@ import mechanize
 from bs4 import BeautifulSoup
 import smtplib
 from enum import Enum
+import easygui
+
 
 class Status(Enum):
 	READY = 0
@@ -107,10 +109,15 @@ def emailResults(eFrom, pwd, eTo, results):
 		return False
 
 	try:
-		server = smtplib.SMTP('smtp.gmail.com', 587)
+		server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
 		server.ehlo()
-		server.starttls()
-		login = server.login(eFrom,pwd)
+	except Exception, e:
+		print "Could not shake hands with gmail: " + str(e)
+		return False
+
+	try:
+		#server.starttls()
+		login = server.login(eFrom, pwd)
 		if login :
 			print "Emailing to: " + eTo
 		else :
@@ -121,9 +128,19 @@ def emailResults(eFrom, pwd, eTo, results):
 
 		server.quit()
 		return True
-	except:
-		print "Could not connect to gmail...aborting"
+	except Exception, e:
+		print "Could not login to gmail: " + str(e)
+		print "Aborting email sequence..."
 		return False
+
+def showReadyDialog(results):
+	toShow = ""
+	for result in results:
+		if result.status == Status.READY or result.status == Status.UNKNOWN:
+			toShow += "Code: " + result.code + " | Status: " + str(result.status) + " | Message: " + result.message + "\n"
+	
+	if len(toShow) > 0:
+		easygui.msgbox(toShow, 'Ready Application Ids')
 
 def main(argv):
 	codeFile = ''
@@ -168,12 +185,19 @@ def main(argv):
 	for result in results:
 		print "Code: " + result.code + " | Status: " + str(result.status) + " | Message: " + result.message
 
+	showDg = False
 	if username and password and emailTo:
 		if emailResults(username, password, emailTo, results):
 			print "Results emailed"
+		else:
+			showDg = True
 	else:
 		print "Email not configured...exiting"
+		showDg = True
 
+	if showDg:
+		print "Showing ready dialog..."
+		showReadyDialog(results)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
