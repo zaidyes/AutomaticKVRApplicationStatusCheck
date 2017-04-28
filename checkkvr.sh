@@ -1,1 +1,2 @@
-python cardStatus.py -c abholNum.txt 
+#!/bin/bash
+python /home/yoctoadm/Projects/KVRAppStatusCheck/cardStatus.py -c /home/yoctoadm/Projects/KVRAppStatusCheck/abholNum.txt

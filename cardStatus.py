@@ -20,14 +20,6 @@ class Result(object):
 		self.status = status
 		self.message = message
 
-# Get file as input parameter
-argLen = len(sys.argv)
-if argLen < 2:
-	print 'Please run the script again passing abhol number file as arguement'
-	sys.exit(2)
-else:
-	fileName = str(sys.argv[1])
-
 def validateCodeFile(fileName):
 	if not fileName:
 		print 'Empty code file name'
@@ -140,6 +132,7 @@ def showReadyDialog(results):
 			toShow += "Code: " + result.code + " | Status: " + str(result.status) + " | Message: " + result.message + "\n"
 	
 	if len(toShow) > 0:
+		print "Showing ready dialog..."
 		easygui.msgbox(toShow, 'Ready Application Ids')
 
 def main(argv):
@@ -151,7 +144,7 @@ def main(argv):
 		opts,args = getopt.getopt(argv,"hc:u:p:t:",["codefile=","username=", "password=", "emailto="])
 	except getopt.GetoptError:
 		print 'cardStatus.py -c <codefile> -u <username> -p <password> -t <emailto>'
-	  	sys.exit(2)
+		sys.exit('Arguements missing')
 
 	for opt,arg in opts:
 	    if opt == '-h':
@@ -168,19 +161,16 @@ def main(argv):
 	    	emailTo = arg
 
 	if not validateCodeFile(codeFile):
-		print 'Please provide a valid code file see help'
-		sys.exit(2)
+		sys.exit('Please provide a valid code file see help')
 	
 
 	codes = getCodesFromFile(codeFile)
 	if len(codes) < 1:
-		print 'No codes found in file'
-		sys.exit(2)
+		sys.exit('No codes found in file')
 
 	results = getCodeResults(codes)
 	if len(results) < 1:
-		print 'No results could be computed please check internet connection'
-		sys.exit(2)
+		sys.exit('No results could be computed please check internet connection')
 
 	for result in results:
 		print "Code: " + result.code + " | Status: " + str(result.status) + " | Message: " + result.message
@@ -196,8 +186,9 @@ def main(argv):
 		showDg = True
 
 	if showDg:
-		print "Showing ready dialog..."
 		showReadyDialog(results)
+
+	sys.exit()
 
 if __name__ == "__main__":
    main(sys.argv[1:])
