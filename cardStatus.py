@@ -3,6 +3,7 @@ import os.path
 import mechanize
 from bs4 import BeautifulSoup
 import smtplib
+from email.mime.text import MIMEText
 from enum import Enum
 import easygui
 
@@ -68,21 +69,21 @@ def getCodeResults(content):
 		answers = soup.find_all("font", attrs={"color":"red"})
 		count = len(answers)
 		if count != 0 :
-			result = Result(code, Status.FAILURE, answers[count-1].string)
+			result = Result(code, Status.FAILURE, answers[count-1].string)#.encode('utf-8'))
 			results.append(result)
 			continue
 
 		answers = soup.find_all("font", attrs={"color":"green"})
 		count = len(answers)
 		if count != 0 :
-			result = Result(code, Status.READY, answers[count-1].string)
+			result = Result(code, Status.READY, answers[count-1].string)#.encode('utf-8'))
 			results.append(result)
 			continue
 
 		answers = soup.find_all("font", attrs={"color":"black"})
 		count = len(answers)
 		if count != 0 :
-			result = Result(code, Status.NOT_READY, answers[count-1].string)
+			result = Result(code, Status.NOT_READY, answers[count-1].string)#.encode('utf-8'))
 			results.append(result)
 			continue
 		
@@ -101,29 +102,36 @@ def emailResults(eFrom, pwd, eTo, results):
 		return False
 
 	try:
-		server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+		server = smtplib.SMTP_SSL('mail.kohlmag.com', 465)
 		server.ehlo()
 	except Exception, e:
-		print "Could not shake hands with gmail: " + str(e)
+		print "Could not shake hands with email server because: " + str(e)
 		return False
 
 	try:
-		#server.starttls()
 		login = server.login(eFrom, pwd)
 		if login :
-			print "Emailing to: " + eTo
-		else :
-			print "Could not login for user: " + username
+			print "Login as: " + eFrom
 
-		for readyRes in readyResults:
-			server.sendmail(eFrom, eTo, "Code: " + readyRes.code + " | Status: " + str(readyRes.status) + " | Message: " + readyRes.message)
-
-		server.quit()
-		return True
 	except Exception, e:
-		print "Could not login to gmail: " + str(e)
+		print "Could not login because: " + str(e)
 		print "Aborting email sequence..."
 		return False
+
+	for readyRes in readyResults:
+		try:
+			msg = MIMEText("Code: " + readyRes.code + " | Status: " + str(readyRes.status) + " | Message: " + readyRes.message.encode('utf-8'))
+			msg['Subject'] = 'Some applications are ready'
+			msg['From'] = eFrom
+			msg['To'] = eTo
+			server.sendmail(eFrom, [eTo], msg.as_string())
+			print "Email sent to: " + eTo
+		except Exception, e:
+			print "Could not send email because: " + str(e)
+			return False
+
+	server.quit()
+	return True
 
 def showReadyDialog(results):
 	toShow = ""
